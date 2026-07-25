@@ -1,0 +1,20 @@
+# Vivado log and journal files
+*.log
+*.jou
+*.str
+
+# Local workspace and compilation directories
+vivado_project/*
+*.hw/*
+*.ip_user_files/*
+*.runs/*
+*.sim/*
+*.srcs/*
+.Xil/*
+
+# Core project binaries if placed incorrectly
+*.cache/
+*.gen/
+
+update_src.sh
+*.wcfg
