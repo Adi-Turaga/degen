@@ -21,6 +21,6 @@ The core delay logic is complete as of this writing. ***The communication logic 
 
 ## TODO
 
-- [ ] **Add CDC for MCU–FPGA communication, and verify it.** Communication is over the SPI protocol -> data over SPI is written into a regfile with crucial timing information (in the process of doi ng so)
+- [ ] **Add CDC for MCU–FPGA communication, and verify it.** Communication is over the SPI protocol -> data over SPI is written into a regfile with crucial timing information (in the process of verification)
 - [ ] **Write pin assignments and constraints.**
 - [ ] **Write an explanation in `README.md` as to how the triggers are generated**
