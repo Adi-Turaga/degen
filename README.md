@@ -14,13 +14,13 @@ But the main motivator was that I thought it would be cooler to implement it on 
 
 - [x] Identified and fixed the core single-FSM trigger-drop bug (channel `t_cycle` exceeding the trigger period caused every-other trigger to be silently ignored)
 - [x] Implemented parity-based channel routing (`sel` toggle gating `is_posedge` per channel) so AB fires on even triggers and CD fires on odd triggers, without the two channels' `RUNNING` states colliding
+- [x] **Add a second top module (or extend the existing one) for a third pulse lane (tE/tF).** Decide whether this stays a hand-wired third channel (matching the current AB/CD style).
+- [x] **Add bitmask trigger functionality.** Generalize the parity routing into a programmable accept/drop pattern per channel (`drop_pattern`/`pattern_AB`/`pattern_CD` over a configurable period N), so trigger-acceptance schemes can be reconfigured without resynthesizing.
 
 The core delay logic is complete as of this writing. ***The communication logic remains.*** 
 
 ## TODO
 
-- [ ] **Add CDC for MCU–FPGA communication, and verify it.** Communication is over the SPI protocol -> data over SPI is written into a regfile with crucial timing information
-- [ ] **Add a second top module (or extend the existing one) for a third pulse lane (tE/tF).** Decide whether this stays a hand-wired third channel (matching the current AB/CD style).
-- [ ] **Add bitmask trigger functionality.** Generalize the parity routing into a programmable accept/drop pattern per channel (`drop_pattern`/`pattern_AB`/`pattern_CD` over a configurable period N), so trigger-acceptance schemes can be reconfigured without resynthesizing.
+- [ ] **Add CDC for MCU–FPGA communication, and verify it.** Communication is over the SPI protocol -> data over SPI is written into a regfile with crucial timing information (in the process of doi ng so)
 - [ ] **Write pin assignments and constraints.**
 - [ ] **Write an explanation in `README.md` as to how the triggers are generated**
