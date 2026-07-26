@@ -3,7 +3,7 @@
 `degen` is FPGA-based programmable delay/pulse generator (hence the name `degen`) for photoacoustic imaging, synchronized to a portable ultrasound system's (us4r) `TrigOut` signal. Generates two (soon three) independently-timed pulse outputs per trigger, driving separate laser wavelength channels, with register configuration over SPI from an MCU. ***Based on the DG535 digital pulse generator***
 
 ## Motivation
-I'm building this to a). **_reduce hardware footprint for my research project's lab_** and b). _to increase my understading of different types of hardware and how they work at a fundamental level_.
+I'm building this to a). **_reduce hardware footprint for my research project_** and b). _to increase my understading of different types of hardware and how they work at a fundamental level_.
 
 ### FPGA vs. MCU in this case
 This task can easily be done using a standard MCU, like an STM32 or an Arduino, but, _in this case_, **using an FPGA guarantees minimal jitter** (on the order of picoseconds) vs MCUs (which can range up to high microseconds territory if using software interrupts). _(That being said, a bare-metal implementation of the interrupts in software would suffice and be much easier to program and maintain.)_
