@@ -1,57 +1,11 @@
-/*`timescale 1ns / 1ps
-
-module tb_top();
-
-    logic clk, rst, en, trig_in;
-    logic [31:0] tA, tB, tC, tD;
-    logic [34:0] t_cycle;
-    logic pulse_w1, pulse_w2;
-    
-    task send_trigger;
-        @(posedge clk);
-        trig_in <= 1;
-        #10000;
-        trig_in <= 0;
-    endtask
-    
-    top dg(
-        .clk(clk), .rst(rst), .en(en), .trig_in(trig_in),
-        .tA(tA), .tB(tB), .tC(tC), .tD(tD), .t_cycle(t_cycle),
-        .pulse_w1(pulse_w1), .pulse_w2(pulse_w2)
-    );
-    
-    always #5 clk = ~clk;
-    
-    initial begin
-        clk <= 1'b0;
-        rst <= 1'b1;
-        trig_in <= 1'b0;
-        
-        tA <= 32'd0;
-        tB <= 32'd1000;
-        tC <= 32'd50000;
-        tD <= 32'd51000;
-        t_cycle <= 32'd51000; // in us, so in reality this is #510000 in ns/ps scale
-
-        #10;
-        rst <= 1'b0;
-        
-        for(int i = 0; i < 15; i++) begin
-            send_trigger;
-            #500000; // every 0.5 ms, send the 10us wide trigger
-            //repeat(51000) @(posedge clk);
-        end
- 
-    end 
-
-endmodule
-*/
 `timescale 1ns / 1ps
+
 module tb_top();
-    logic clk, rst, trig_in;
-    logic [21:0] tA, tB, tC, tD;
-    logic [21:0] t_cycle;
-    logic pulse_w1, pulse_w2;
+    logic clk, rst_n, trig_in;
+    logic en_AB, en_CD, en_EF;
+    logic [21:0] tA, tB, tC, tD, tE, tF;
+    //logic [21:0] t_cycle;
+    logic pulse_w1, pulse_w2, pulse_w3;
 
     task send_trigger;
         @(posedge clk);
@@ -61,10 +15,10 @@ module tb_top();
     endtask
 
     top dg(
-        .clk(clk), .rst(rst), .trig_in(trig_in),
-        .tA(tA), .tB(tB), .tC(tC), .tD(tD), 
-        .tAB_cycle(t_cycle), .tCD_cycle(t_cycle),
-        .pulse_w1(pulse_w1), .pulse_w2(pulse_w2)
+        .clk(clk), .rst_n(rst_n), .trig_in(trig_in),
+        .en_AB(en_AB), .en_CD(en_CD), .en_EF(en_EF),
+        //.tA(tA), .tB(tB), .tC(tC), .tD(tD), .tE(tE), .tF(tF),
+        .pulse_w1(pulse_w1), .pulse_w2(pulse_w2), .pulse_w3(pulse_w3)
     );
 
     // 100 MHz
@@ -73,22 +27,39 @@ module tb_top();
     initial begin
         clk <= 1'b0;
         trig_in <= 1'b0;
-        rst <= 1'b1;
+        rst_n <= 1'b0;
         
         #100;
         
-        rst <= 1'b0;
-        tA <= 32'd0;
-        tB <= 32'd1000;
-        tC <= 32'd0;
-        tD <= 32'd1000;
-        t_cycle <= 32'd1000;
+        rst_n <= 1'b1;
+        en_AB <= 1'b1;
+        en_CD <= 1'b1;
+        en_EF <= 1'b0;
+        
+        /*tA <= 22'd0;
+        tB <= 22'd1000;
+        tC <= 22'd0;
+        tD <= 22'd1000;
+        tE <= 22'd0;
+        tF <= 22'd1000;*/
 
         #10;
 
+        for(int i = 0; i < 10; i++) begin
+            send_trigger;
+            #500000;
+        end
+        
+        #500000;
+        
+        en_EF <= 1'b1;
         for(int i = 0; i < 15; i++) begin
             send_trigger;
-            #500000; // total loop time = 500,000 ns exactly
+            #400000;
         end
+        
+        #100000;
+        
+        $finish;
     end
 endmodule

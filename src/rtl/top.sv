@@ -1,55 +1,76 @@
 `timescale 1ns / 1ps
 
-module top(
-    input clk, rst, en, trig_in,
-    input [21:0] tA, tB, // tA (t1) and tB (t2) correspond to when they start in microseconds
-    input [21:0] tC, tD, // same as tA and tB but for the second pulse
-    //input [31:0] tE, tF,
-    input [1:0] update,
-    output logic pulse_w1, pulse_w2
+module top #(
+    parameter int N = 3 // number of pulse lanes
+)(
+    input clk, rst_n, trig_in,
+    input en_AB, en_CD, en_EF,
+    output logic pulse_w1, pulse_w2, pulse_w3
     );
     
-    logic is_posedge, posedge_AB, posedge_CD, sel; 
-     
-    logic active; 
-    logic [21:0] tA_new, tB_new, tC_new, tD_new;
+    logic [20:0] tA, tB, tC, tD, tE, tF;
+    
+    logic is_posedge;
+    logic [N-1:0] bitmask_AB, bitmask_CD, bitmask_EF;
+    logic [$clog2(N)-1:0] bitmask_ptr;
+    logic active;
+    
+    logic [N-1:0] N_en, N_active;
+    assign N_en = en_AB + en_CD + en_EF;
+    assign N_active = (N_en == 2'b11) ? 3 : 2;
     
     posedge_detector pe(
         .clk(clk), .trig_in(trig_in), .is_posedge(is_posedge)
     );
     
-    logic [21:0] t_cycle;
-    assign t_cycle = tB > tD ? tB : tD;
+    logic [21:0] tAB_cycle, tCD_cycle, tEF_cycle;
+    assign tAB_cycle = tB + 7'd80;
+    assign tCD_cycle = tD + 7'd80;
+    assign tEF_cycle = tF + 7'd80;
     
     always_ff @(posedge clk) begin
-        if (rst) sel <= 1'b0;
-        else if (is_posedge) sel <= ~sel;
-        
-        if(update[0] && !active) begin
-            case(update[1])
-                1'b0: begin
-                    tA <= tA_new;
-                    tB <= tB_new;
-                end
-                1'b1: begin
-                    tC <= tC_new;
-                    tD <= tD_new;
-                end 
-            endcase
+        if (!rst_n) bitmask_ptr <= 1'b0;
+        else if (is_posedge) begin
+            if(bitmask_ptr == N_active-1) bitmask_ptr <= '0;
+            else bitmask_ptr <= bitmask_ptr + 1;
+        end 
+    end
+    
+    always_ff @(posedge clk) begin
+        if (!rst_n) begin
+            tA <= 21'd0; tC <= 21'd0; tE <= 21'd0;
+            tB <= 21'd1000; tD <= 21'd1000; tF <= 21'd1000;
+        end
+        else begin
+            tA <= 21'd0; tC <= 21'd0; tE <= 21'd0;
+            tB <= 21'd1000; tD <= 21'd1000; tF <= 21'd1000;
         end
     end
-
-    assign posedge_AB = is_posedge & sel;  // even-numbered triggers (1st, 3rd... however you count "even")
-    assign posedge_CD = is_posedge & ~sel;  // odd-numbered triggers
     
+    assign bitmask_AB = 3'b001;
+    assign bitmask_CD = 3'b010;
+    assign bitmask_EF = 3'b100;
+    
+    assign posedge_AB = is_posedge & bitmask_AB[bitmask_ptr];
+    assign posedge_CD = is_posedge & bitmask_CD[bitmask_ptr];
+    assign posedge_EF = is_posedge & bitmask_EF[bitmask_ptr];
+    
+    // AB pulse
     delay_gen_v2 dg2_AB (
-        .clk(clk), .rst(rst), .en(en), .is_posedge(posedge_AB), .active(active),
-        .t1(tA), .t2(tB), .t_cycle(t_cycle), .pulse(pulse_w1)
+        .clk(clk), .rst_n(rst_n), .en(en_AB), .is_posedge(posedge_AB), .active(active),
+        .t1(tA), .t2(tB), .t_cycle(tAB_cycle), .pulse(pulse_w1)
     );
     
+    // CD pulse
     delay_gen_v2 dg2_CD (
-        .clk(clk), .rst(rst), .en(en), .is_posedge(posedge_CD), .active(active),
-        .t1(tC), .t2(tD), .t_cycle(t_cycle), .pulse(pulse_w2)
+        .clk(clk), .rst_n(rst_n), .en(en_CD), .is_posedge(posedge_CD), .active(active),
+        .t1(tC), .t2(tD), .t_cycle(tCD_cycle), .pulse(pulse_w2)
+    );
+    
+    // EF pulse
+    delay_gen_v2 dg2_EF (
+        .clk(clk), .rst_n(rst_n), .en(en_EF), .is_posedge(posedge_EF), .active(active),
+        .t1(tE), .t2(tF), .t_cycle(tEF_cycle), .pulse(pulse_w3)
     );
     
 endmodule

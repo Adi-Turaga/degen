@@ -1,9 +1,9 @@
 `timescale 1ns / 1ps
 
 module delay_gen_v2(
-    input clk, rst, en,
-    input [21:0] t1, t2, // t1 and t2 correspond to when they start in microseconds
-    input [21:0] t_cycle , // t_cycle corresponds to how long cycle is,
+    input clk, rst_n, en,
+    input [20:0] t1, t2, // t1 and t2 correspond to when they start in microseconds
+    input [20:0] t_cycle , // t_cycle corresponds to how long cycle is,
     input is_posedge,
     output logic pulse, active
     );
@@ -20,22 +20,16 @@ module delay_gen_v2(
     */
     
     logic [39:0] master_counter;
-    //logic is_posedge;
-    
-    /*logic t1_active, t2_active;
-    
-    assign t1_active = (t1 < t2) && (master_counter >= t1);
-    assign t2_active = (t2 > t1) && (master_counter >= t2);*/
     
     states_e state;
     
     always_ff @(posedge clk) begin
-        if(rst) begin
+        if(!rst_n) begin
             state <= IDLE;
             master_counter <= '0;
             active <= 1'b0;
         end 
-        else begin
+        else if(en) begin
             case(state) 
                 IDLE: begin
                     if(is_posedge) begin
@@ -56,7 +50,6 @@ module delay_gen_v2(
         end
     end 
     
-    //assign pulse = t1_active ^ t2_active;
     assign pulse = (state == RUNNING) &&
                (master_counter >= t1) &&
                (master_counter < t2);
