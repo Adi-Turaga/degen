@@ -2,8 +2,8 @@
 
 module delay_gen_v2(
     input clk, rst_n, en,
-    input [19:0] t1, t2, // t1 and t2 correspond to when they start in microseconds
-    input [19:0] t_cycle , // t_cycle corresponds to how long cycle is,
+    input [20:0] t1, t2, // t1 and t2 correspond to when they start in microseconds
+    input [20:0] t_cycle , // t_cycle corresponds to how long cycle is,
     input is_posedge,
     output logic pulse, active
     );
