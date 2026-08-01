@@ -1,65 +1,133 @@
 `timescale 1ns / 1ps
 
-module tb_top();
-    logic clk, rst_n, trig_in;
-    logic en_AB, en_CD, en_EF;
-    logic [21:0] tA, tB, tC, tD, tE, tF;
-    //logic [21:0] t_cycle;
-    logic pulse_w1, pulse_w2, pulse_w3;
+module tb_top;
 
-    task send_trigger;
-        @(posedge clk);
-        trig_in <= 1;
-        #10000;
-        trig_in <= 0;
-    endtask
+    localparam CLK_FREQ   = 50_000_000;
+    localparam BAUD_RATE  = 115200;
+    localparam TICK       = CLK_FREQ / BAUD_RATE;
+    localparam CLK_PERIOD = 20;
 
-    top dg(
-        .clk(clk), .rst_n(rst_n), .trig_in(trig_in),
-        .en_AB(en_AB), .en_CD(en_CD), .en_EF(en_EF),
-        //.tA(tA), .tB(tB), .tC(tC), .tD(tD), .tE(tE), .tF(tF),
-        .pulse_w1(pulse_w1), .pulse_w2(pulse_w2), .pulse_w3(pulse_w3)
+    logic clk;
+    logic rst_n;
+    logic trig_in;
+
+    logic sclk;
+    logic din;
+
+    logic en_AB;
+    logic en_CD;
+    logic en_EF;
+
+    logic pulse_w1;
+    logic pulse_w2;
+    logic pulse_w3;
+
+    top #(
+        .BAUD_RATE(BAUD_RATE),
+        .CLK_FREQ(CLK_FREQ)
+    ) uut (
+        .clk(clk),
+        .rst_n(rst_n),
+        .trig_in(trig_in),
+        .din(din),
+
+        .en_AB(en_AB),
+        .en_CD(en_CD),
+        .en_EF(en_EF),
+
+        .pulse_w1(pulse_w1),
+        .pulse_w2(pulse_w2),
+        .pulse_w3(pulse_w3)
     );
 
-    // 100 MHz
-    always #5 clk = ~clk;
+    always #(CLK_PERIOD/2) clk = ~clk;
+
+    task automatic uart_send_byte(input [7:0] data);
+        begin
+            din = 0;
+            repeat(TICK) @(posedge clk);
+
+            for (int i = 0; i < 8; i++) begin
+                din = data[i];
+                repeat(TICK) @(posedge clk);
+            end
+
+            din = 1;
+            repeat(TICK) @(posedge clk);
+        end
+    endtask
+
+    task automatic uart_send_packet(input [23:0] packet);
+        begin
+            uart_send_byte(packet[23:16]);
+            uart_send_byte(packet[15:8]);
+            uart_send_byte(packet[7:0]);
+
+            repeat(TICK) @(posedge clk);
+        end
+    endtask
 
     initial begin
-        clk <= 1'b0;
-        trig_in <= 1'b0;
-        rst_n <= 1'b0;
+
+        clk <= 0;
+        rst_n <= 0;
+        din <= 1;
+
+        trig_in <= 0;
+
+        en_AB <= 0;
+        en_CD <= 0;
+        en_EF <= 0;
+
+        repeat(100) @(posedge clk);
+        rst_n <= 1;
+        repeat(100) @(posedge clk);
         
-        #100;
+        uart_send_packet(24'h900004);   // AB = 100
+        uart_send_packet(24'h500002);   // CD = 010
+        uart_send_packet(24'h300001);   // EF = 001
         
-        rst_n <= 1'b1;
-        en_AB <= 1'b1;
-        en_CD <= 1'b1;
+        repeat(500) @(posedge clk);
+
+        // 10us pulses
+        uart_send_packet(24'h000000);   // tA = 0
+        uart_send_packet(24'h2001F4);   // tB = 500
+        uart_send_packet(24'h400000);   // tC = 0
+        uart_send_packet(24'h6001F4);   // tD = 500
+        uart_send_packet(24'h800000);   // tE = 0
+        uart_send_packet(24'hA001F4);   // tF = 500
+        
+        repeat(2000) @(posedge clk);
+        
+        en_AB <= 1;
+        en_CD <= 1;
+        en_EF <= 1;
+
+        repeat(200) @(posedge clk);
+
+        for(int i = 0; i < 15; i++) begin
+            trig_in <= 1;
+            #5000;
+            trig_in <= 0;
+            #100000;
+        end
+        
         en_EF <= 1'b0;
         
-        /*tA <= 22'd0;
-        tB <= 22'd1000;
-        tC <= 22'd0;
-        tD <= 22'd1000;
-        tE <= 22'd0;
-        tF <= 22'd1000;*/
-
-        #10;
-
-        for(int i = 0; i < 10; i++) begin
-            send_trigger;
-            #500000;
-        end
+        uart_send_packet(24'h3e8);
+        uart_send_packet(24'h2009c4);
         
-        #500000;
-        
-        en_EF <= 1'b1;
         for(int i = 0; i < 15; i++) begin
-            send_trigger;
-            #400000;
+            trig_in <= 1;
+            #5000;
+            trig_in <= 0;
+            #100000;
         end
-        
-        #100000;
-        
+
+        repeat(500) @(posedge clk);
+
         $finish;
+
     end
+
 endmodule
