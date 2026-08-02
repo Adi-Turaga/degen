@@ -19,3 +19,5 @@ vivado_project/*
 update_src.sh
 *.wcfg
 delay_generator.xpr
+
+py2degen/__pycache__
