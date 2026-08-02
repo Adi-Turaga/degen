@@ -143,4 +143,4 @@ I used a `Terasic DE0-Nano` for this project; however, I used Vivado for all of 
 
 ## Last few steps
 - Write final pin assignments (the constraints in `src` are testing assignments to validate behavior)
-- Possibly implement a phase-locked loop (PLL) to minimize jitter
+- Possibly implement a phase-locked loop (PLL) to minimize jitter (although the jitter is already extremely low, on nanosecond-scale)
