@@ -18,3 +18,4 @@ vivado_project/*
 
 update_src.sh
 *.wcfg
+delay_generator.xpr
